@@ -2,7 +2,6 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -29,13 +28,17 @@ struct LinkedList<T> {
     end: Option<NonNull<Node<T>>>,
 }
 
-impl<T> Default for LinkedList<T> {
+impl<T> Default for LinkedList<T> 
+where T:std::cmp::Ord
+{
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T> LinkedList<T> {
+impl<T> LinkedList<T> 
+where T:std::cmp::Ord
+{
     pub fn new() -> Self {
         Self {
             length: 0,
@@ -69,14 +72,55 @@ impl<T> LinkedList<T> {
             },
         }
     }
-	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
+	
+    pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
 	{
 		//TODO
-		Self {
+		let mut list_c = Self {
             length: 0,
             start: None,
             end: None,
+        };
+
+        let mut head_a = list_a.start;
+        let mut head_b = list_b.start;
+
+        let mut append = |node: Option<NonNull<Node<T>>>| {
+            if let Some(mut ptr) = node {
+                unsafe {
+                    (*ptr.as_ptr()).next = None;
+                    match list_c.end {
+                        None => list_c.start = Some(ptr),
+                        Some(mut end_ptr) => (*end_ptr.as_ptr()).next = Some(ptr),
+                    }
+                    list_c.end = Some(ptr);
+                    list_c.length += 1;
+                }
+            }
+        };
+
+        while head_a.is_some() || head_b.is_some(){
+            let pick_from_a = match (head_a, head_b){
+                (Some(a), Some(b)) => unsafe{
+                    (*a.as_ptr()).val < (*b.as_ptr()).val
+                },
+                (Some(_), None) => true,
+                (None, Some(_)) => false,
+                (None, None) => break
+            };
+
+            if pick_from_a{
+                let next = unsafe{ (*head_a.unwrap().as_ptr()).next };
+                append(head_a);
+                head_a = next;
+            } else{
+                let next = unsafe{ (*head_b.unwrap().as_ptr()).next };
+                append(head_b);
+                head_b = next;
+            }
         }
+
+        list_c
 	}
 }
 
